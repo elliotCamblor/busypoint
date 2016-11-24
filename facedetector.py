@@ -36,10 +36,12 @@ def cleanupFaceDict():
 	for key in oldFaces.keys():
 		# If the face was found this frame set mia frames to 0 and delete wasFound for the next frame
 		if "wasFound" in oldFaces[key]:
+			if "miaFrames" in oldFaces[key]:
+				oldFaces[key]["frameCount"] += oldFaces[key]["miaFrames"]
 			oldFaces[key]["miaFrames"] = 0
 			del oldFaces[key]["wasFound"]
 		# Otherwise if its been mia for less than 29 frames increase the counter
-		elif oldFaces[key]["miaFrames"] < 29:
+		elif oldFaces[key]["miaFrames"] < miaFrames:
 			oldFaces[key]["miaFrames"] = oldFaces[key]["miaFrames"] + 1
 		# If its been mia more than 29 frames delete the entry
 		else:
@@ -47,14 +49,16 @@ def cleanupFaceDict():
 
 
 def isFaceClose(face, oldFace):
-	if abs(face[0] - oldFace[0]) < 20 and abs(face[1] - oldFace[1]) < 20 and abs(face[1] - oldFace[1]) < 20 and abs(face[2] - oldFace[2]) < 20 and abs(face[3] - oldFace[3]) < 20:
+	if abs(face[0] - oldFace[0]) < maxPixelDist and abs(face[1] - oldFace[1]) < maxPixelDist and abs(face[1] - oldFace[1]) < maxPixelDist and abs(face[2] - oldFace[2]) < maxPixelDist and abs(face[3] - oldFace[3]) < maxPixelDist:
 		return True
 	return False
 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 profileface_cascade = cv2.CascadeClassifier('haarcascade_profileface.xml')
 
-cap = cv2.VideoCapture("vid_cropped.mp4")
+miaFrames = 160
+maxPixelDist = 30
+cap = cv2.VideoCapture("newvid.mp4")
 fps = cap.get(cv2.cv.CV_CAP_PROP_FPS)
 oldFaces = {}
 while True:
