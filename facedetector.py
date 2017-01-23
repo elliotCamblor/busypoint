@@ -4,21 +4,24 @@ import cv2
 def checkIfOldFace(face):
 	# check if oldfaces is empty
 	if len(oldFaces.keys()):
+		# Check the faces for a nearby face. If its found update the key, frame count, and wasFound, delete old key entry
+		oldFaceMatch = None
+		minAvgDist = 0
+		#Iterate through the list of old faces, and find the best match
+		for oldFaceCoord, value in oldFaces.iteritems():
+			if "wasFound" not in value:
+				oldFaceMatch = checkFaceDist(face, oldFaceCoord, minAvgDist)
 		# check for the current location in oldFaces, if it's found update the frame counts and set wasFound to true
 		if tuple(face) in oldFaces:
 			oldFaces[tuple(face)]["frameCount"] += 1
 			oldFaces[tuple(face)]["wasFound"] = True
 			return
-		# Check the faces for a nearby face. If its found update the key, frame count, and wasFound, delete old key entry
-		for oldFaceCoord, value in oldFaces.iteritems():
-			if isFaceClose(face, oldFaceCoord) and "wasFound" not in value:
-				print "here"
-				oldFaces[tuple(face)] = oldFaces[tuple(oldFaceCoord)]
-				oldFaces[tuple(face)]["frameCount"] += 1
-				oldFaces[tuple(face)]["wasFound"] = True
-				del oldFaces[tuple(oldFaceCoord)]
-				break
-
+		#if there is a good match, update the dict
+		elif oldFaceMatch is not None:
+			oldFaces[tuple(face)] = oldFaces[tuple(oldFaceMatch)]
+			oldFaces[tuple(face)]["frameCount"] += 1
+			oldFaces[tuple(face)]["wasFound"] = True
+			del oldFaces[tuple(oldFaceMatch)]	
 		# If no match was found assume its a new face
 		else:
 			oldFaces[tuple(face)] = {
@@ -48,34 +51,36 @@ def cleanupFaceDict():
 			del oldFaces[key]
 
 
-def isFaceClose(face, oldFace):
-	if abs(face[0] - oldFace[0]) < maxPixelDist and abs(face[1] - oldFace[1]) < maxPixelDist and abs(face[1] - oldFace[1]) < maxPixelDist and abs(face[2] - oldFace[2]) < maxPixelDist and abs(face[3] - oldFace[3]) < maxPixelDist:
-		return True
-	return False
+def checkFaceDist(face, oldFace, minAvgDist):
+	avgDist = (abs(face[0] - oldFace[0]) + abs(face[1] - oldFace[1]) + abs(face[2] - oldFace[2]) + abs(face[3] - oldFace[3]))/4
+	if avgDist < minAvgDist or minAvgDist == 0 and avgDist < maxPixelDist:
+		minAvgDist = avgDist
+		return oldFace
 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 profileface_cascade = cv2.CascadeClassifier('haarcascade_profileface.xml')
 
 miaFrames = 160
 maxPixelDist = 30
-cap = cv2.VideoCapture("newvid.mp4")
+cap = cv2.VideoCapture("vid_cropped.mp4")
 fps = cap.get(cv2.cv.CV_CAP_PROP_FPS)
 oldFaces = {}
+
 while True:
 	ret, frame = cap.read()
+
 	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 	faces = face_cascade.detectMultiScale(frame, 1.3, 5)
 	cv2.putText(frame,str(fps),(10,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),1)
-
-	# print oldFaces
+	print "here 1"
 	for i in range(len(faces)):
+		print "here", len(faces)
 		(x,y,w,h) = faces[i]
 		cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
 		checkIfOldFace(tuple(faces[i]))
 		cv2.putText(frame, str(oldFaces[tuple(faces[i])]["frameCount"]),(x,y), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),1)
 		roi_gray = gray[y:y+h, x:x+w]
 		roi_color = frame[y:y+h, x:x+w]
-	print oldFaces
 	cleanupFaceDict()
 	k = cv2.waitKey(30) & 0xff
 	cv2.imshow('frame', frame)
