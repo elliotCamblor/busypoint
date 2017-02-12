@@ -61,6 +61,8 @@ maxPixelDist = 30
 cap = cv2.VideoCapture("newvid.mp4")
 fps = cap.get(cv2.cv.CV_CAP_PROP_FPS)
 oldFaces = {}
+fourcc = cv2.cv.CV_FOURCC(*'XVID')
+videowriter = cv2.VideoWriter( "test1", fourcc, fps, (640,480))
 while True:
 	ret, frame = cap.read()
 	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -74,11 +76,12 @@ while True:
 		checkIfOldFace(tuple(faces[i]))
 		cv2.putText(frame, str(oldFaces[tuple(faces[i])]["frameCount"]),(x,y), cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),1)
 		roi_gray = gray[y:y+h, x:x+w]
-		roi_color = frame[y:y+h, x:x+w]
+		roi_color = frame[y:y+h, x:x+w]	
 	print oldFaces
-	cleanupFaceDict()
+	# cleanupFaceDict()
 	k = cv2.waitKey(30) & 0xff
-	cv2.imshow('frame', frame)
+	# cv2.imshow('frame', frame)
+	videowriter.write( frame )
 	if k == 27:
 		break
 cap.release()
