@@ -61,7 +61,7 @@ maxPixelDist = 30
 cap = cv2.VideoCapture("newvid.mp4")
 fps = cap.get(cv2.cv.CV_CAP_PROP_FPS)
 oldFaces = {}
-fourcc = cv2.cv.CV_FOURCC(*'XVID')
+fourcc = cv2.cv.CV_FOURCC(*'XVID') 
 videowriter = cv2.VideoWriter( "test1", fourcc, fps, (640,480))
 while True:
 	ret, frame = cap.read()
